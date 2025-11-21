@@ -195,7 +195,7 @@ const IntroSection = () => (
           {/* GitHub - 仅图标和名称，点击跳转 */}
           <p className="text-gray-300 flex items-center gap-3">
             <Github size={16} className="text-white/50" />
-            <a href="https://github.com/chenling" target="_blank" rel="noopener noreferrer" className="hover:text-cyber transition-colors font-bold">GitHub</a>
+            <a href="https://github.com/LingChen1314520" target="_blank" rel="noopener noreferrer" className="hover:text-cyber transition-colors font-bold">GitHub</a>
           </p>
           {/* CSDN - 仅图标和名称，点击跳转 */}
           <p className="text-gray-300 flex items-center gap-3">
