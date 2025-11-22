@@ -1,16 +1,118 @@
-# React + Vite
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-Currently, two official plugins are available:
+# ⚡ CyberBlog: 沉浸式赛博朋克个人空间
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## React Compiler
+**CyberBlog** 是一个基于 **React** 和 **Firebase** 构建的全栈单页应用（SPA）。它融合了极客美学与现代 Web 技术，旨在为访客提供一个仿佛接入“矩阵网络”般的沉浸式阅读体验。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+[👉 在线预览 Live Demo](https://cyber-blog-ten.vercel.app/)
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## ✨ 核心特性 (Features)
+
+### 🎨 沉浸式视觉体验
+- **动态粒子网络**: 使用 `tsparticles` 渲染可交互的神经网络背景。
+- **霓虹玻璃拟态**: 结合 `Tailwind CSS` 实现深色模式下的磨砂玻璃与发光边框效果。
+- **打字机交互**: 首页独特的逐字渲染问候语，营造人机对话感。
+- **流畅动画**: 基于 `Framer Motion` 实现的页面切换与元素进入动画。
+
+### 🛠️ 强大的内容管理 (CMS)
+- **内置控制台**: 隐藏的管理员登录入口，通过密钥解锁。
+- **CRUD 操作**: 支持在前端直接创建和删除文章/项目。
+- **Markdown 支持**: 集成 `marked` 库，支持 `.md` 文件一键导入与渲染。
+- **实时同步**: 数据存储于 Google Firestore，实现毫秒级云端同步。
+
+### 📱 全能架构
+- **响应式设计**: 完美适配桌面、平板及移动端设备。
+- **分页系统**: 自研分页组件，支持自定义每页显示数量。
+- **分类导航**: 清晰的 "简介 / 文章 / 项目 / 工具箱" 模块划分。
+
+---
+
+## 🛠️ 技术栈 (Tech Stack)
+
+### 前端 (Frontend)
+- **Framework**: React 18 + Vite
+- **Styling**: Tailwind CSS
+- **Animation**: Framer Motion
+- **Icons**: Lucide React
+- **Effects**: tsparticles-slim
+
+### 后端 (Backend & Services)
+- **Database**: Firebase Cloud Firestore
+- **Authentication**: Custom Auth Logic (System Lock)
+- **Hosting**: Vercel
+
+---
+
+## 🚀 本地运行指南 (Getting Started)
+
+如果你想在本地克隆并运行此项目：
+
+### 1. 克隆仓库
+```bash
+git clone https://github.com/LingChen1314520/cyber-blog.git
+cd cyber-blog
+```
+
+### 2. 安装依赖
+确保你安装了 Node.js，然后运行：
+```bash
+npm install
+```
+
+### 3. 配置 Firebase
+项目依赖 Firebase 服务。你需要创建一个自己的 Firebase 项目，并在 `src/App.jsx` 中替换配置信息：
+```javascript
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  // ... 其他配置
+};
+```
+
+### 4. 启动开发服务器
+```bash
+npm run dev
+```
+浏览器打开 `http://localhost:5173` 即可看到效果。
+
+---
+
+## 📂 项目结构 (Structure)
+
+```text
+cyber-blog/
+├── public/              # 静态资源 (头像, vite.svg)
+├── src/
+│   ├── assets/          # 图片与样式资源
+│   ├── App.jsx          # 核心逻辑 (路由, 状态管理, Firebase交互)
+│   ├── App.css          # 全局样式修正
+│   ├── index.css        # Tailwind 引入
+│   └── main.jsx         # 入口文件
+├── index.html           # HTML 模板 (包含 marked CDN)
+├── tailwind.config.js   # Tailwind 配置
+├── vite.config.js       # Vite 配置
+└── README.md            # 项目说明文档
+```
+
+---
+
+## 📦 部署指南 (Deployment)
+
+本项目优化了适配 **Vercel** 的部署流程：
+
+1.  将代码提交至 **GitHub**。
+2.  在 Vercel 中导入 Git 仓库，框架选择 **Vite**。
+3.  点击 **Deploy** 等待构建完成。
+
+### ⚠️ 注意事项
+部署后如果出现数据加载失败（白屏），请务必：
+1.  进入 **Firebase Console** -> **Authentication** -> **Settings** -> **Authorized domains**。
+2.  将 Vercel 生成的域名（如 `your-app.vercel.app`）添加至白名单。
+3.  确保 `index.html` 中已正确引入 `marked` CDN。
+
+---
+
