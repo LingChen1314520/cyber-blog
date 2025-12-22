@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { initializeApp } from "firebase/app";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, getCountFromServer } from "firebase/firestore";
+import AdminDashboard from './admin/AdminDashboard';
 
 // ---------------------------------------------------------
 // 1. 配置区域 (Firebase 配置)
@@ -19,13 +20,13 @@ const marked = window.marked;
 
 // NOTE: Please replace these with your actual Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDdHMN_tqZUuplsAl8jxRTCJdTnvvUb8Ak",
-  authDomain: "tech-portfolio-4cc08.firebaseapp.com",
-  projectId: "tech-portfolio-4cc08",
-  storageBucket: "tech-portfolio-4cc08.firebasestorage.app",
-  messagingSenderId: "282238563314",
-  appId: "1:282238563314:web:62d02e23a7a18bc72f316b",
-  measurementId: "G-6XV43YRZTB"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // 初始化 Firebase
@@ -643,6 +644,8 @@ const SettingsSection = ({
 export default function App() {
   // 导航状态: 'intro', 'blog', 'projects', 'settings', 'toolbox'
   const [activeTab, setActiveTab] = useState('intro');
+  // 管理模式
+  const [isAdminMode, setIsAdminMode] = useState(false);
   // 选中的文章/项目详情 (null/object)
   const [selectedItem, setSelectedItem] = useState(null);
   const [itemType, setItemType] = useState(null);
@@ -715,8 +718,12 @@ export default function App() {
 
   // 交互逻辑
   const handleLogin = (pwd) => {
-    if (pwd === "chen1234") { 
+    // 从环境变量获取管理员密码，如果没有设置则使用默认值（仅用于开发）
+    const adminPassword = import.meta.env.VITE_ADMIN_PASSWORD || 'chen1234';
+
+    if (pwd === adminPassword) {
       setIsAdmin(true);
+      setIsAdminMode(true); // 切换到管理模式
       console.log("管理员权限已授予 // ADMIN ACCESS GRANTED");
     } else {
       console.log("访问拒绝 // ACCESS DENIED");
@@ -770,12 +777,11 @@ export default function App() {
   }
   
   // 详情页顶部分类导航点击处理
-  const handleSelectCategory = (type) => {
-      setSelectedItem(null);
-      setItemType(null);
-      setActiveTab(type);
-      setCurrentPage(1);
-  }
+  const handleAdminLogout = () => {
+    setIsAdmin(false);
+    setIsAdminMode(false);
+    setActiveTab('intro');
+  };
 
   // Markdown 文件导入回调
   const handleImportMarkdown = ({ title, content }) => {
@@ -820,6 +826,10 @@ export default function App() {
 
   // 渲染内容
   const renderContent = () => {
+    if (isAdminMode) {
+      return <AdminDashboard onLogout={handleAdminLogout} />;
+    }
+
     if (selectedItem) {
       return <DetailView 
         item={selectedItem} 
@@ -958,3 +968,5 @@ export default function App() {
     </div>
   );
 }
+
+export { db };
