@@ -4,13 +4,9 @@ import {
   BarChart3, Users, FileText, FolderOpen, Settings, LogOut,
   Plus, Edit, Trash2, Eye, Search, Filter, Download, Upload
 } from 'lucide-react';
-import { collection, getDocs, query, orderBy, addDoc, updateDoc, deleteDoc, doc, getCountFromServer } from "firebase/firestore";
-import { db } from '../App';
 
-const AdminDashboard = ({ onLogout }) => {
+const AdminDashboard = ({ onLogout, posts: postsProp = [], projects: projectsProp = [] }) => {
   const [activeSection, setActiveSection] = useState('overview');
-  const [posts, setPosts] = useState([]);
-  const [projects, setProjects] = useState([]);
   const [stats, setStats] = useState({
     totalPosts: 0,
     totalProjects: 0,
@@ -29,114 +25,38 @@ const AdminDashboard = ({ onLogout }) => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
-    try {
-      console.log("🔄 正在获取数据...");
-
-      // 获取文章
-      const postsQuery = query(collection(db, "posts"), orderBy("date", "desc"));
-      const postsSnap = await getDocs(postsQuery);
-      const postsData = postsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      setPosts(postsData);
-      console.log("📄 获取到文章数量:", postsData.length);
-
-      // 获取项目
-      const projectsQuery = query(collection(db, "projects"), orderBy("date", "desc"));
-      const projectsSnap = await getDocs(projectsQuery);
-      const projectsData = projectsSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-      setProjects(projectsData);
-      console.log("📁 获取到项目数量:", projectsData.length);
-
-      // 更新统计
-      setStats({
-        totalPosts: postsData.length,
-        totalProjects: projectsData.length,
-        totalViews: postsData.reduce((sum, post) => sum + (post.views || 0), 0) +
-                   projectsData.reduce((sum, project) => sum + (project.views || 0), 0),
-        totalUsers: 1 // 简化处理
-      });
-
-      console.log("✅ 数据获取完成");
-    } catch (error) {
-      console.error("❌ 获取数据失败:", error);
-      console.error("错误代码:", error.code);
-      console.error("错误消息:", error.message);
-    }
-  };
+    // 使用传入的数据
+    setStats({
+      totalPosts: postsProp.length,
+      totalProjects: projectsProp.length,
+      totalViews: postsProp.reduce((sum, post) => sum + (post.views || 0), 0),
+      totalUsers: 0 // 本地模式不支持用户统计
+    });
+  }, [postsProp, projectsProp]);
 
   const handleCreate = async () => {
-    if (!formData.title || !formData.content) {
-      alert("标题和内容不能为空！");
-      return;
-    }
-
-    console.log("🔄 开始创建文章...");
-    console.log("表单数据:", formData);
-
-    try {
-      const collectionName = formData.type === 'blog' ? 'posts' : 'projects';
-      console.log("📝 目标集合:", collectionName);
-
-      const docData = {
-        title: formData.title,
-        content: formData.content,
-        tags: formData.tags,
-        date: new Date().toISOString(),
-        views: 0
-      };
-      console.log("📄 准备保存的数据:", docData);
-
-      const docRef = await addDoc(collection(db, collectionName), docData);
-      console.log("✅ 文章创建成功，文档ID:", docRef.id);
-
-      setFormData({ title: '', content: '', tags: '', type: 'blog' });
-      setShowCreateModal(false);
-      fetchData();
-      alert("创建成功！");
-    } catch (error) {
-      console.error("❌ 创建失败:", error);
-      console.error("错误代码:", error.code);
-      console.error("错误消息:", error.message);
-      alert(`创建失败: ${error.message}`);
-    }
+    // 本地存储模式下，无法直接创建文件
+    // 请手动在 public/articles/ 目录下创建 .md 文件
+    // 并更新 index.json
+    alert("本地存储模式：请手动在 public/articles/ 目录下创建 .md 文件，并更新 index.json");
+    setFormData({ title: '', content: '', tags: '', type: 'blog' });
+    setShowCreateModal(false);
   };
 
   const handleEdit = async () => {
-    if (!editingItem || !formData.title || !formData.content) return;
-
-    try {
-      const collectionName = editingItem.type === 'blog' ? 'posts' : 'projects';
-      await updateDoc(doc(db, collectionName, editingItem.id), {
-        title: formData.title,
-        content: formData.content,
-        tags: formData.tags
-      });
-
-      setEditingItem(null);
-      setFormData({ title: '', content: '', tags: '', type: 'blog' });
-      fetchData();
-      alert("更新成功！");
-    } catch (error) {
-      console.error("更新失败:", error);
-      alert("更新失败，请重试");
-    }
+    // 本地存储模式下，无法直接编辑文件
+    // 请手动编辑 public/articles/ 目录下的对应 .md 文件
+    // 并更新 index.json
+    alert("本地存储模式：请手动编辑 public/articles/ 目录下的对应 .md 文件，并更新 index.json");
+    setEditingItem(null);
+    setFormData({ title: '', content: '', tags: '', type: 'blog' });
   };
 
   const handleDelete = async (item, type) => {
-    if (!confirm(`确定删除"${item.title}"吗？此操作不可撤销！`)) return;
-
-    try {
-      const collectionName = type === 'blog' ? 'posts' : 'projects';
-      await deleteDoc(doc(db, collectionName, item.id));
-      fetchData();
-      alert("删除成功！");
-    } catch (error) {
-      console.error("删除失败:", error);
-      alert("删除失败，请重试");
-    }
+    // 本地存储模式下，无法直接删除文件
+    // 请手动删除 public/articles/ 目录下的对应文件
+    // 并更新 index.json
+    alert("本地存储模式：请手动删除 public/articles/ 目录下的对应文件，并更新 index.json");
   };
 
   const startEdit = (item, type) => {

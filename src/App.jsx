@@ -6,32 +6,12 @@ import {
   Terminal, Cpu, Save, Lock, Trash2, GitBranch,
   Power, User, Settings, Home, BookOpen, Layers, Mail, Github, MessageSquare, ArrowLeft, Tag, UserCircle, Phone, Smartphone, Clipboard, Upload, ChevronLeft, ChevronRight, Wrench, Link
 } from 'lucide-react';
-import { initializeApp } from "firebase/app";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, orderBy, getCountFromServer } from "firebase/firestore";
 import AdminDashboard from './admin/AdminDashboard';
+import { marked } from 'marked';
 
 // ---------------------------------------------------------
-// 1. 配置区域 (Firebase 配置)
+// 1. 配置区域
 // ---------------------------------------------------------
-
-// 使用 CDN 引入 marked 库进行 Markdown 渲染
-// 在此模拟环境中，我们假设 marked 已通过 CDN 引入并全局可用。
-const marked = window.marked;
-
-// NOTE: Please replace these with your actual Firebase configuration
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
-};
-
-// 初始化 Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // ---------------------------------------------------------
 // 2. 工具组件定义
@@ -228,10 +208,8 @@ const IntroSection = () => (
 
 // 文章/项目详情页
 const DetailView = ({ item, onBack, type, onSelectCategory }) => {
-    // 确保 marked 库已加载
-    const renderedHtml = typeof marked !== 'undefined' 
-        ? marked.parse(item.content || '内容加载失败或Markdown库未就绪。')
-        : 'Markdown 渲染库加载中...';
+    // 渲染Markdown内容
+    const renderedHtml = marked(item.content || '内容加载失败。');
 
     // 统一图标和标签
     const categoryLabel = type === 'blog' ? '文章列表 // ARTICLE LIST' : '项目列表 // PROJECTS LIST';
@@ -673,23 +651,33 @@ export default function App() {
   // 数据获取
   const fetchData = async () => {
     try {
-      // 获取文章列表
-      const qPosts = query(collection(db, "posts"), orderBy("date", "desc"));
-      const postSnap = await getDocs(qPosts);
-      setPosts(postSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
-      
-      // 获取文章数量
-      const countPostsSnap = await getCountFromServer(collection(db, "posts"));
-      setPostCount(countPostsSnap.data().count);
+      // 读取文章索引
+      const indexResponse = await fetch('/articles/index.json');
+      const articlesIndex = await indexResponse.json();
 
-      // 获取项目列表
-      const qProjects = query(collection(db, "projects"), orderBy("date", "desc"));
-      const projSnap = await getDocs(qProjects);
-      setProjects(projSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })));
+      // 读取每个文章的内容
+      const postsPromises = articlesIndex.map(async (article) => {
+        const contentResponse = await fetch(`/articles/${article.filename}`);
+        const content = await contentResponse.text();
+        return {
+          id: article.filename,
+          title: article.title,
+          content: content,
+          tags: article.tags,
+          date: article.date,
+          views: 0 // 本地存储不支持浏览量统计
+        };
+      });
 
-      // 获取项目数量
-      const countProjectsSnap = await getCountFromServer(collection(db, "projects"));
-      setProjectCount(countProjectsSnap.data().count);
+      const posts = await Promise.all(postsPromises);
+      // 按日期降序排序
+      posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+      setPosts(posts);
+      setPostCount(posts.length);
+
+      // 对于项目，暂时保持空或可以类似处理
+      setProjects([]);
+      setProjectCount(0);
 
     } catch (error) {
       console.error("数据拉取失败:", error);
@@ -697,14 +685,6 @@ export default function App() {
   };
 
   useEffect(() => { 
-    // 确保 marked 库的可用性
-    if (typeof window.marked === 'undefined') {
-        // 确保 marked 库在全局环境中可用
-        const script = document.createElement('script');
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/marked/4.0.17/marked.min.js";
-        script.onload = () => console.log('Markdown library loaded.');
-        document.head.appendChild(script);
-    }
     fetchData();
   }, []);
   
@@ -735,33 +715,21 @@ export default function App() {
       console.error("标题和内容不能为空！");
       return;
     }
-    const collectionName = newType === 'blog' ? 'posts' : 'projects';
-    await addDoc(collection(db, collectionName), {
-      title: newTitle,
-      content: newContent,
-      tags: newTags.trim(), // 保存标签
-      date: new Date().toISOString(),
-    });
+    
+    // 本地存储模式下，无法直接写入文件
+    // 请手动在 public/articles/ 目录下创建 .md 文件
+    // 并更新 index.json
+    alert("本地存储模式：请手动在 public/articles/ 目录下创建 .md 文件，并更新 index.json");
+    
     setNewTitle(""); setNewContent(""); setNewTags("");
-    fetchData(); // 重新拉取数据以更新列表和计数
-    console.log("数据已同步至云端核心 // UPLOAD COMPLETE");
-    // 自动跳转到对应板块查看
-    handleSetActiveTab(newType === 'blog' ? 'blog' : 'projects');
+    // 不重新拉取数据，因为数据是静态的
   };
 
   const handleDelete = async (id, collectionName) => {
-    // 使用自定义的模态框替代 window.confirm()
-    // NOTE: 在这里使用 prompt 模拟，实际应用中建议使用自定义 modal
-    const isConfirmed = window.prompt("确认从数据库删除此数据？输入 'DELETE' 确认操作。") === 'DELETE'; 
-    if(!isConfirmed) return;
-    
-    try {
-        await deleteDoc(doc(db, collectionName, id));
-        fetchData();
-        console.log(`文档 ${id} 已删除。`);
-    } catch (error) {
-        console.error("删除失败:", error);
-    }
+    // 本地存储模式下，无法直接删除文件
+    // 请手动删除 public/articles/ 目录下的对应文件
+    // 并更新 index.json
+    alert("本地存储模式：请手动删除 public/articles/ 目录下的对应文件，并更新 index.json");
   };
 
   const handleSelect = (item, type) => {
@@ -822,12 +790,12 @@ export default function App() {
     } else if (newTotalPages === 0) {
         setCurrentPage(1);
     }
-  }
+  };
 
   // 渲染内容
   const renderContent = () => {
     if (isAdminMode) {
-      return <AdminDashboard onLogout={handleAdminLogout} />;
+      return <AdminDashboard onLogout={handleAdminLogout} posts={posts} projects={projects} />;
     }
 
     if (selectedItem) {
@@ -968,5 +936,3 @@ export default function App() {
     </div>
   );
 }
-
-export { db };
